@@ -1,3 +1,4 @@
+/* 条款2 - 理解auto型别推导 */
 
 #include <initializer_list>
 #include <vector>

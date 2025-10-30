@@ -1,3 +1,4 @@
+/* 条款3 - 理解decltype */
 
 #include <deque>
 #include <vector>
@@ -60,7 +61,21 @@ C++14情况：
 
 namespace DecltypeDeductions2
 {
+    // C++11 case
+    /*
+        * 这里使用了C++11的尾置返回类型语， 即在函数形参列表后面使用一个”->“符号指出函数的返回类型
+        * 函数名称前面的auto不会做任何的类型推导工作，尾置返回类型的好处是我们可以在函数返回类型中使用函数形参相关的信息
+        * 在authAndAccess函数中，我们使用c和i指定返回类型。
+        * 如果我们按照传统语法把函数返回类型放在函数名称之前，c和i就未被声明所以不能使用
+    */
+    // template<typename Container, typename Index>
+    // auto getValue(Container& c, Index i) -> decltype(c[i])
+    // {
+    //     return c[i]; // 返回容器c中索引为i的元素
+    // }
+
     // C++14 case
+    // C++14 优化了返回值尾序语法，不用再写
     template<typename Container, typename Index>
     auto getValue(Container& c, Index i)
     {
@@ -68,12 +83,15 @@ namespace DecltypeDeductions2
     }
 
     // 问题：
+    // getValue返回的是c[i]的类型（即c的operator[]返回值类型，即元素引用），
+    // 但如果c是一个容器类，operator[]返回的是一个int&类型的引用
+    // 那理论上getValue(d, 2) = 10是合法的，是否可以直接赋值？
     void question()
     {
         std::deque<int> d = { 1, 2, 3, 4, 5 };
 
         // 以下调用是否合法？
-        getValue(d, 2) = 10;
+        // getValue(d, 2) = 10;
     }
     /*
         答案：
@@ -87,7 +105,7 @@ namespace DecltypeDeductions2
 
 
 /*
-decltype推导的妙用：
+decltype推导的妙用（解决上述问题）：
     * 1.利用decltype类型推导来推导它的返回值，即返回一个和c[i]表达式类型一样的类型（T&)
     * C++14通过使用decltype(auto)说明符, 使类型被暗示时需要使用decltype类型推导的规则
     * 
@@ -97,30 +115,32 @@ decltype推导的妙用：
 
 namespace DecltypeDeductions3
 {
-
+    // decltype(auto) 解决了上述问题（C++14）
+    //
     template<typename Container, typename Index>
     decltype(auto) getValue(Container& c, Index i) 
     {
         return c[i]; // 返回容器c中索引为i的元素
     }
 
-    void resolution()
+    void solution()
     {
         std::deque<int> d = { 1, 2, 3, 4, 5 };
 
+        // 通过decltype(auto)，返回值类型是int&，所以可以直接赋值
         getValue(d, 2) = 10;
     }
 
 
     struct Widget {};
 
-    void anotherTest()
+    void anotherUse()
     {
         Widget w;
 
         const Widget& rw = w; // rw是一个const Widget&类型的引用
 
-        auto widget1 = rw; // widget是一个Widget类型的对象
+        auto widget1 = rw; // auto推导，widget是一个Widget类型的对象
 
         decltype(auto) widget2 = rw; // widget2是一个const Widget&类型的引用
     }
@@ -142,26 +162,79 @@ namespace DecltypeDeductions4
         return c[i]; // 返回容器c中索引为i的元素
     }
 
-    void resolution()
+    void question()
     {
         std::deque<int> d { 1, 2, 3, 4, 5 };
 
         // 运行时错误：
+        // 由于传的是临时值，临时在调用前就被销毁了
         getValue((std::deque<int>{ 1, 2, 3, 4, 5 }), 2) = 10;
     }
 
+}
 
-    struct Widget {};
 
-    void anotherTest()
+/*
+扩展情况（解决方案）：
+    对于getValue函数的传递参数是 非常量左值引用（lvalue-reference-to-non-const）
+    但如果传递是一个 右值医用容器，是非法的。除非把形参改为常量左值引用（lvalue-reference-to-const）
+*/
+namespace DecltypeDeductions5
+{
+
+    // 万有引用（&&）可以解决左值引用和右值引用问题
+    // 但万有引用需要加上std::forward（条款25）
+    // C++14版本
+    template<typename Container, typename Index>
+    decltype(auto) getValue(Container&& c, Index i) 
     {
-        Widget w;
-
-        const Widget& rw = w; // rw是一个const Widget&类型的引用
-
-        auto widget1 = rw; // widget是一个Widget类型的对象
-
-        decltype(auto) widget2 = rw; // widget2是一个const Widget&类型的引用
+        return std::forward<Container>(c)[i]; // 返回容器c中索引为i的元素
     }
 
+    // C++11版本
+    // template<typename Container, typename Index>
+    // auto getValue(Container&& c, Index i) 
+    // -> decltype(std::forward<Container>(c)[i])
+    // {
+    //     return std::forward<Container>(c)[i]; // 返回容器c中索引为i的元素
+    // }
+
+    void solution()
+    {
+        std::deque<int> d { 1, 2, 3, 4, 5 };
+        getValue(d, 2) = 10;
+
+        getValue((std::deque<int>{ 1, 2, 3, 4, 5 }), 2) = 10;
+    }
+
+}
+
+/*
+delctype的特殊用法：
+    对于单纯的变量名，decltype只会返回变量的声明类型
+    然而，对于比单纯的变量名更复杂的左值表达式，decltype可以确保报告的类型始终是左值引用
+*/
+
+namespace DecltypeDeductions5
+{
+    decltype(auto) common()
+    {
+        int x = 0;
+        return x;
+    }
+
+
+    decltype(auto) special()
+    {
+        int x = 0;
+        // C++认为()中是一个复杂的表达式
+        return (x); // 返回int&类型，导致未定义行为
+    }
+
+    void test()
+    {
+
+        decltype(auto) y = common(); // y是int类型
+        decltype(auto) z = special(); // z是int&类型 运行时出错
+    }
 }

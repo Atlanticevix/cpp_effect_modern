@@ -1,3 +1,5 @@
+/* 条款1 - 理解模板型别推导 */
+
 /* template_type_deduction */
 
 #include <iostream>
