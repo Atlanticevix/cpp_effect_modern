@@ -89,3 +89,7 @@ namespace
         processWidget(w, highPriority); // 编译通过
     }
 }
+
+// 四、总结
+// * 不可见的代理类可能会使auto从表达式中推导出“错误的”类型
+// * 显式类型初始器惯用法强制auto推导出你想要的结果

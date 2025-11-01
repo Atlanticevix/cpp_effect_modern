@@ -317,3 +317,9 @@ namespace TempalteTypeDedution10
         f(someFunc); // T = int(int, double), ParamType = int(&)(int, double)
     }
 }
+
+// 总结
+// * 在模板类型推导时，有引用的实参会被视为无引用，他们的引用会被忽略
+// * 对于通用引用的推导，左值实参会被特殊对待
+// * 对于传值类型推导，const和/或volatile实参会被认为是non-const的和non-volatile的
+// * 在模板类型推导时，数组名或者函数名实参会退化为指针，除非它们被用于初始化引用

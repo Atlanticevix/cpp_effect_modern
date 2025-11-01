@@ -238,3 +238,8 @@ namespace DecltypeDeductions5
         decltype(auto) z = special(); // z是int&类型 运行时出错
     }
 }
+
+// 总结
+// * decltype总是不加修改的产生变量或者表达式的类型。
+// * 对于T类型的不是单纯的变量名的左值表达式，decltype总是产出T的引用即T&。
+// * C++14支持decltype(auto)，就像auto一样，推导出类型，但是它使用decltype的规则进行推导。

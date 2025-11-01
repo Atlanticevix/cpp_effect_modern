@@ -132,3 +132,7 @@ namespace
 // 然而，使用nullptr是调用没什么问题。当nullptr传给lockAndCall时，
 // ptr被推导为std::nullptr_t。当ptr被传递给f3的时候，隐式转换使std::nullptr_t转换为Widget*，
 // 因为std::nullptr_t可以隐式转换为任何指针类型。
+
+// 三、总结
+// * 优先考虑nullptr而非0和NULL
+// * 避免重载指针和整型
