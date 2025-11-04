@@ -1,4 +1,4 @@
-// item 10 - 优先考虑限域enum而非未限域enum
+// 条款 10 - 优先考虑限域enum而非未限域enum
 
 #include <cstdint>
 #include <tuple>
